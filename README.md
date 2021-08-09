@@ -1,4 +1,4 @@
-# Term8-Artificial-Intelligent-Flatland-challenge
+# Term8-Artificial-Intelligent
 
 ## CIKM2020 AnalytiCup Covid-19 Retweet Prediction Challenge - The Covid-19 Retweet Prediction Challenge
 The Covid-19 Retweet Prediction Challenge requires predicting the number of retweets from the post made. On twitter, users can post tweets which are short text posts, and retweet refers to the sharing of another user’s tweet (post) and as a means to share information, hence amplifying the spread of information through the network. This is inline with SUTD’s Artificial Intelligence course to implement an innovation solution for an AI related problem.
