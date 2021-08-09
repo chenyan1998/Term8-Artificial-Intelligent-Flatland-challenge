@@ -17,6 +17,11 @@ The Covid-19 Retweet Prediction Challenge requires predicting the number of retw
 #
 
 
+## Dataset
+- Original Dataset: https://data.gesis.org/tweetscov19/
+- Processed Dataset: https://sutdapac-my.sharepoint.com/:f:/g/personal/luying_pang_mymail_sutd_edu_sg/EjAupSQg3QxIiqTTL_pE1c8BoD7i2bb3PovJ8r1XZOs_Xw?e=FqTkSX 
+
+
 #
 
 ## UI demo
