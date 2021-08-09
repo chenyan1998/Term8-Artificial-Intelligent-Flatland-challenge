@@ -32,7 +32,7 @@ pip install streamlit
 ### To run the code
 At the command line: 
 ``` 
-streamlit run projectUI.py  
+streamlit run gui.py  
 ```
 
 ### How to use
