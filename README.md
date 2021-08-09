@@ -25,15 +25,13 @@ The Covid-19 Retweet Prediction Challenge requires predicting the number of retw
 #
 
 ## UI demo
+You can view the GUI demonstration here: 
+[https://youtu.be/rOHn4gtp3eM]
 ```
-pip install streamlit
-```
-
-### To run the code
-At the command line: 
-``` 
 streamlit run gui.py  
 ```
+
+# 
 
 ### How to use
 1. Input 
