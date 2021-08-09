@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from sklearn.preprocessing import StandardScaler
 import plotly.express as px
+from sklearn.metrics import mean_squared_log_error
 
 @st.cache
 def read_data():
@@ -23,48 +24,50 @@ def read_data_one():
     training_Data = pd.read_csv("./dataset/toy_training_set.csv")
     return raw_data, training_Data
 
+class RMSLELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = nn.MSELoss()
 
-class Net(nn.Module): 
-    def __init__(self, inputs_dim, channel_list, l2_reg=0, dropout_rate=0.5, use_bn=False, 
-                 init_std=0.0001, seed=1024, device='cpu'): 
-        super(Net, self).__init__() 
-        self.dropout_rate = dropout_rate 
-        self.seed = seed 
-        self.l2_reg = l2_reg 
-        self.use_bn = use_bn 
-        if len(channel_list) == 0: 
-            raise ValueError("hidden_units is empty!!") 
- 
-        channel_list = [inputs_dim] + list(channel_list) 
- 
-        self.layers = nn.ModuleList() 
-        for i in range(len(channel_list)-2): 
-          self.layers.append( 
-              nn.Sequential( 
-                  nn.Linear(channel_list[i],channel_list[i+1]), 
-                  nn.BatchNorm1d(channel_list[i+1]), 
-                  nn.ReLU(), 
-                  nn.Dropout(self.dropout_rate) 
-                )               
-            ) 
-         
-        #output layer 
-        self.output = nn.Linear(channel_list[len(channel_list)-2], 1) 
- 
-        self.to(device) 
- 
-    def forward(self, X): 
-        #hidden layers 
-        for layer in self.layers: 
-            X = layer(X) 
-        #output layer 
-        X = self.output(X) 
-        return X
+    def forward(self, pred, actual):
+        return torch.sqrt(self.mse(torch.log(pred + 1), torch.log(actual + 1)))
+
+
+# Train model 7  : oscilate, but fast decrease , Based on network22 ,  dropout to 0.3
+class Net7(nn.Module):
+    def __init__(self, input_size, output_size):
+        super().__init__()
+        self.hidden1 = nn.Linear(input_size,2048)
+        self.bn1 = nn.BatchNorm1d(2048)
+        self.dropout1 = nn.Dropout(0.3)
+        self.hidden2 = nn.Linear(2048,512)
+        self.bn2 = nn.BatchNorm1d(512)
+        self.dropout2 = nn.Dropout(0.3)
+        self.hidden3 = nn.Linear(512,128)
+        self.bn3 = nn.BatchNorm1d(128)
+        self.dropout3 = nn.Dropout(0.3)
+        self.output = nn.Linear(128, output_size)
+        
+        self.relu = torch.nn.ReLU()
+        # self.sigmoid = torch.nn.Sigmoid()
+
+    def forward(self,x):  # Input is a 1D tensor
+        x = self.dropout1(self.relu(self.bn1(self.hidden1(x))))
+        x = self.dropout2(self.relu(self.bn2(self.hidden2(x))))
+        x = self.dropout3(self.relu(self.bn3(self.hidden3(x))))
+        x = self.output(self.relu(x))
+        return x
+    
 
 def load_model():
     # load all tensors onto the cpu
-    model = torch.load("./saved_models/epoch20.pt")
-    return model
+    # model = torch.load("./saved_models/Bestmodel.pth") 
+    device = torch.device('cpu')
+    model = Net7(39, 1)
+    model.load_state_dict(torch.load("./saved_models/Bestmodel.pth", map_location=device))
+    criterion = RMSLELoss()
+    model.eval()
+    return model, criterion
 
 def scaler_y(df):
     scaler_y = StandardScaler(copy=True)
@@ -126,22 +129,27 @@ def main():
         # normdf
         
         # load model
-        trained_model = load_model()
+        trained_model, criterion_ = load_model()
         # predict retweets
-        trained_model.eval()
         input_features = torch.tensor(normdf.drop(["retweets"],1).to_numpy())
         
         # st.write(trained_model)
         # print(len(input_features[0]))
         y_pred = trained_model(input_features.float())
         y_pred_val = y_scaler.inverse_transform(y_pred.detach().numpy())
-        y_label_val = y_scaler.inverse_transform(normdf['retweets'].to_numpy().reshape(-1,1))
+        
+        y_label=torch.tensor(normdf['retweets'].to_numpy())
+        y_label_val = y_scaler.inverse_transform(y_label.detach().numpy())
         # print(y_pred_val) #>>> [[val]]
         st.write("Predicted label:",y_pred_val[0][0])
-        st.write("Ground truth label:",y_label_val[0][0])
+        # print(y_label_val)
+        st.write("Ground truth label:",y_label_val[0])
+        loss_test=criterion_(y_pred,y_label.float().reshape(-1,1))
+        st.write("MSLE Loss:",round(loss_test.item(),3))
         
         
         st.title("__Model Information__")
+        st.image("./saved_models/output.png")
 
         # training & accuracy curve 
 if __name__ == "__main__":
